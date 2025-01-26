@@ -1,6 +1,6 @@
-namespace Personal_finance_tracker.utils;
-
 using System.Security.Cryptography;
+
+namespace expense_tracker.Util;
 
 public class OtpGenerator
 {

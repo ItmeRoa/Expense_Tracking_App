@@ -1,4 +1,4 @@
-using Personal_finance_tracker.utils;
+using expense_tracker.Util;
 
 namespace expense_tracker.config;
 

@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Personal_finance_tracker.utils;
+namespace expense_tracker.Util;
 
 public class PasswordHasher
 {

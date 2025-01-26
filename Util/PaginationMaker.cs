@@ -1,4 +1,4 @@
-namespace Personal_finance_tracker.utils;
+namespace expense_tracker.Util;
 
 public  class PaginationMaker
 {

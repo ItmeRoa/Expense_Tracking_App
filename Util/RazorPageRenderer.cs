@@ -1,6 +1,6 @@
 using RazorLight;
 
-namespace Personal_finance_tracker.utils;
+namespace expense_tracker.Util;
 
 public class RazorPageRenderer
 {
@@ -22,7 +22,7 @@ public class RazorPageRenderer
         {
             return await _engine.CompileRenderAsync(template, model);
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             throw new InvalidOperationException($"Error rendering template {template}", ex);
         }

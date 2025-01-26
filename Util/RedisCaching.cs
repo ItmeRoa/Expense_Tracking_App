@@ -2,8 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Distributed;
 using ILogger = Serilog.ILogger;
-
-namespace Personal_finance_tracker.utils;
+namespace expense_tracker.Util;
 
 public class RedisCaching
 {
@@ -50,7 +49,7 @@ public class RedisCaching
             await _cache.SetStringAsync(key, serializedValue, options);
             _logger.Information("Cache set for key: {Key}", key);
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             _logger.Error(ex, "Failed to set cache for key: {Key}", key);
             throw;
@@ -73,7 +72,7 @@ public class RedisCaching
             _logger.Information("Cache hit for key: {Key}", key);
             return JsonSerializer.Deserialize<T>(cacheData, _serializer);
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             _logger.Error(ex, "Failed to get cache for key: {Key}", key);
             return default;
@@ -89,7 +88,7 @@ public class RedisCaching
             await _cache.RemoveAsync(key);
             _logger.Information("Cache removed for key: {Key}", key);
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             _logger.Error(ex, "Failed to remove cache for key: {Key}", key);
             throw;

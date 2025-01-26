@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using ILogger = Serilog.ILogger;
 
-namespace Personal_finance_tracker.utils;
+namespace expense_tracker.Util;
 
 public class JwtGenerator
 {
