@@ -2,7 +2,7 @@ bin/
 obj/
 .idea
 .env
-/log
+log/
 bfg.jar
 /packages/
 riderModule.iml
