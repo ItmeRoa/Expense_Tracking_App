@@ -1,0 +1,8 @@
+bin/
+obj/
+.idea
+.env
+bfg.jar
+/packages/
+riderModule.iml
+/_ReSharper.Caches/

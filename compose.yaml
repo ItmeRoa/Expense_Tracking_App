@@ -1,0 +1,6 @@
+﻿services:
+  expense_tracker:
+    image: expense_tracker
+    build:
+      context: .
+      dockerfile: Dockerfile
