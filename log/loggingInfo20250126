@@ -1,7 +1,0 @@
-2025-01-26 23:23:51.549 +07:00 [INF] No action descriptors found. This may indicate an incorrectly configured application or missing application parts. To learn more, visit https://aka.ms/aspnet/mvc/app-parts
-2025-01-26 23:23:51.587 +07:00 [INF] User profile is available. Using '/home/roa/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
-2025-01-26 23:23:51.667 +07:00 [INF] Now listening on: http://localhost:5231
-2025-01-26 23:23:51.669 +07:00 [INF] Application started. Press Ctrl+C to shut down.
-2025-01-26 23:23:51.670 +07:00 [INF] Hosting environment: Development
-2025-01-26 23:23:51.670 +07:00 [INF] Content root path: /home/roa/Documents/backend_project/ASP/expense_tracker
-2025-01-26 23:24:51.216 +07:00 [INF] Application is shutting down...

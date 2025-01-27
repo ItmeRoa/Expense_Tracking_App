@@ -31,9 +31,8 @@
     <ItemGroup>
       <Folder Include="Config\" />
       <Folder Include="Controller\" />
-      <Folder Include="Dto\" />
+      <Folder Include="log\" />
       <Folder Include="Middleware\" />
-      <Folder Include="Repo\" />
       <Folder Include="Service\" />
       <Folder Include="Validation\" />
     </ItemGroup>
