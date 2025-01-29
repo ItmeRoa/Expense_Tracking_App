@@ -2,6 +2,6 @@ namespace expense_tracker.Dto.Response;
 
 public class SignUpEmailVerificationResponse : ResponseMsg
 {
-    
-    public required string Guid { get; set; }
+    public required Guid Session { get; set; }
+    public required DateTime ExpiredAt { get; set; }
 }

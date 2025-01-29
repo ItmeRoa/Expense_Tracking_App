@@ -22,6 +22,9 @@ public class UserService : IUserService
     private readonly OtpGenerator _otpGenerator;
     private readonly RazorPageRenderer _razorPageRenderer;
     private readonly IFluentEmail _fluentEmail;
+    private const string RedisKeyOtp = "_session.opt.";
+    private const string RedisEmailCreationPayload = "_session.email.";
+    private const string RedisVerifiedEmailCreationPayload = "_session.email.verified.";
 
     public UserService(IUserRepo userRepo, ILogger logger, RedisCaching cache, PasswordHasher passwordHasher,
         OtpGenerator otpGenerator, RazorPageRenderer razorPageRenderer, IFluentEmail fluentEmail)
@@ -71,7 +74,16 @@ public class UserService : IUserService
             if (request.ConfirmPassword != request.Password) throw new ArgumentException("The password does not match");
 
             uint otp = _otpGenerator.GenerateSecureOtp();
-            string session = Guid.NewGuid().ToString();
+            Guid session = Guid.NewGuid();
+
+
+            await _cache.SetAsync($"{RedisKeyOtp}{session}", otp, TimeSpan.FromMinutes(10));
+            await _cache.SetAsync($"{RedisEmailCreationPayload}{session}", new RedisEmailUapPayload
+            {
+                Email = request.Email,
+                Password = request.Password,
+                IsEmailVerified = false
+            }, TimeSpan.FromMinutes(15));
 
             EmailMetadata emailMetadata = new EmailMetadata
             {
@@ -85,13 +97,6 @@ public class UserService : IUserService
                 VerificationCode = otp,
                 VerificationExpTime = 15
             };
-
-            await _cache.SetAsync($"_session.otp.{session}", otp, TimeSpan.FromMinutes(10));
-            await _cache.SetAsync($"_session.email.{session}", new RedisEmailUapPayload
-            {
-                Email = request.Email,
-                Password = request.Password
-            }, TimeSpan.FromMinutes(15));
 
             await SendEmailAsync(emailMetadata, emailMsg);
 
@@ -109,12 +114,30 @@ public class UserService : IUserService
         }
     }
 
-    public Task<SignUpEmailVerificationResponse> EmailVerificationAsync(VerifyEmailRequest request)
+    public async Task<SignUpEmailVerificationResponse> EmailVerificationAsync(Guid session,
+        VerifyEmailRequest request)
     {
-        throw new NotImplementedException();
+        uint otp = await _cache.GetAsync<uint>($"{RedisKeyOtp}{session}");
+        if (otp == 0) throw new CachedTokenException("The Otp has expired or does not exist");
+        if (otp != request.OtpCode) throw new ArgumentException("The Otp does not match");
+
+        RedisEmailUapPayload payload =
+            await _cache.GetAsync<RedisEmailUapPayload>($"{RedisEmailCreationPayload}{session}") ??
+            throw new CachedTokenException(
+                "The user creation payload has expired or does not exist");
+
+        payload.IsEmailVerified = true;
+        await _cache.SetAsync($"{RedisVerifiedEmailCreationPayload}{session}", payload, TimeSpan.FromMinutes(10));
+
+        return new SignUpEmailVerificationResponse
+        {
+            Message = "Email successfully verified.",
+            Session = session,
+            ExpiredAt = DateTime.UtcNow.AddMinutes(10)
+        };
     }
 
-    public Task<UserCreatedResponse> CreateUserAsync(NameReuqest request)
+    public Task<UserCreatedResponse> CreateUserAsync(Guid session, NameReuqest request)
     {
         throw new NotImplementedException();
     }

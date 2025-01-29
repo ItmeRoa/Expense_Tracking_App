@@ -7,7 +7,7 @@ namespace expense_tracker.Service.IService;
 public interface IUserService
 {
     Task<User> GetUserByIdAsync(int id);
-    Task<SignupUapResponse> SignupByUaPAsync(SignUpByUapRequest request); 
-    Task<SignUpEmailVerificationResponse> EmailVerificationAsync(VerifyEmailRequest request); 
-    Task<UserCreatedResponse> CreateUserAsync(NameReuqest request); 
+    Task<SignupUapResponse> SignupByUaPAsync(SignUpByUapRequest request);
+    Task<SignUpEmailVerificationResponse> EmailVerificationAsync(Guid session, VerifyEmailRequest request);
+    Task<UserCreatedResponse> CreateUserAsync(Guid session,NameReuqest request);
 }
