@@ -71,6 +71,7 @@ public class UserService : IUserService
             if (request.ConfirmPassword != request.Password) throw new ArgumentException("The password does not match");
 
             uint otp = _otpGenerator.GenerateSecureOtp();
+            string session = Guid.NewGuid().ToString();
 
             EmailMetadata emailMetadata = new EmailMetadata
             {
@@ -81,23 +82,23 @@ public class UserService : IUserService
 
             EmailVerificationMsg emailMsg = new EmailVerificationMsg
             {
-                ReceiverEmail = request.Email,
                 VerificationCode = otp,
                 VerificationExpTime = 15
             };
-            RedisEmailUapPayload emailPayload = new RedisEmailUapPayload
+
+            await _cache.SetAsync($"_session.otp.{session}", otp, TimeSpan.FromMinutes(10));
+            await _cache.SetAsync($"_session.email.{session}", new RedisEmailUapPayload
             {
                 Email = request.Email,
                 Password = request.Password
-            };
+            }, TimeSpan.FromMinutes(15));
 
-            await _cache.SetAsync($"otp.{request.Email}", otp, TimeSpan.FromMinutes(10));
-            await _cache.SetAsync($"email.{request.Email}", emailPayload, TimeSpan.FromMinutes(15));
             await SendEmailAsync(emailMetadata, emailMsg);
 
             return new SignupUapResponse
             {
                 Message = "Signup success",
+                Session = session,
                 SignUpSessionExpAt = DateTime.UtcNow.AddMinutes(15)
             };
         }

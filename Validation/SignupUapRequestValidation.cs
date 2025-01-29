@@ -14,7 +14,7 @@ public class SignupUapRequestValidation : AbstractValidator<SignUpByUapRequest>
         RuleFor(x => x.Password)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Password must not be empty")
-            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,50}$")
+            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$")
             .WithMessage("Password must have at least one uppercase, one lowercase, and a number.")
             .Length(8, 50).WithMessage("Password must be between 8 and 50 characters long.");
 
