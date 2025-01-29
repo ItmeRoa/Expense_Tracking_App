@@ -1,7 +1,6 @@
-﻿
-namespace expense_tracker.Model;
+﻿namespace expense_tracker.Model;
 
-public  class UserAuth
+public class UserAuth
 {
     public int UserAuthId { get; set; }
 

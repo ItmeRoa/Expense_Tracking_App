@@ -1,6 +1,6 @@
 ﻿namespace expense_tracker.Model;
 
-public  class SubscriptionPlan
+public class SubscriptionPlan
 {
     public int PlanId { get; set; }
 

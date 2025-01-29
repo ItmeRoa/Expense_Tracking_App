@@ -1,6 +1,6 @@
-namespace Personal_finance_tracker.exception;
+namespace expense_tracker.Exception;
 
-public class DomainException(string? message) : Exception(message);
+public class DomainException(string? message) : System.Exception(message);
 
 public class EntityAlreadyExistException(string? message) : DomainException(message);
 

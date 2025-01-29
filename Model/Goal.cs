@@ -1,7 +1,6 @@
-﻿
-namespace expense_tracker.Model;
+﻿namespace expense_tracker.Model;
 
-public  class Goal
+public class Goal
 {
     public int GoalId { get; set; }
 

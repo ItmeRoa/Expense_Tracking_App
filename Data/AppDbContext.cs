@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace expense_tracker.Data;
 
-public class AppDbContext : DbContext
+public  class AppDbContext : DbContext
 {
     public AppDbContext()
     {
@@ -29,7 +29,8 @@ public class AppDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserAuth> UserAuths { get; set; }
-    
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Category>(entity =>
@@ -105,8 +106,7 @@ public class AppDbContext : DbContext
 
             entity.ToTable("Subscriptions", "subscription");
 
-            entity.HasIndex(e => new { e.UserId, e.PlanId }, "IX_Active_Subscriptions")
-                .HasFilter("([subscription_status]='active')");
+            entity.HasIndex(e => new { e.UserId, e.PlanId }, "IX_Active_Subscriptions").HasFilter("([subscription_status]='active')");
 
             entity.HasIndex(e => e.EndDate, "IX_Subscriptions_EndDate");
 
@@ -244,6 +244,11 @@ public class AppDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.DisplayName)
+                .HasMaxLength(150)
+                .IsUnicode(false)
+                .HasDefaultValue("")
+                .HasColumnName("display_name");
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .IsUnicode(false)
@@ -252,6 +257,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("first_name");
+            entity.Property(e => e.IsEmailVerified).HasColumnName("is_email_verified");
             entity.Property(e => e.LastName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -259,6 +265,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.MiddleName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
+                .HasDefaultValue(" ")
                 .HasColumnName("middle_name");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
@@ -297,5 +304,6 @@ public class AppDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__User_Auth__user___5CD6CB2B");
         });
+
     }
 }

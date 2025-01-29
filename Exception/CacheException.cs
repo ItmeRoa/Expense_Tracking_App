@@ -1,6 +1,6 @@
-namespace Personal_finance_tracker.exception;
+namespace expense_tracker.Exception;
 
-public class CacheException : Exception
+public class CacheException : System.Exception
 {
     public CacheException()
     {
@@ -10,7 +10,7 @@ public class CacheException : Exception
     {
     }
 
-    public CacheException(string msg, Exception innerException)
+    public CacheException(string msg, System.Exception innerException)
     {
     }
 }
@@ -25,7 +25,7 @@ public class CachedTokenException : CacheException
     {
     }
 
-    public CachedTokenException(string msg, Exception innerException)
+    public CachedTokenException(string msg, System.Exception innerException)
     {
     }
 }

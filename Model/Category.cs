@@ -1,5 +1,4 @@
-﻿
-namespace expense_tracker.Model;
+﻿namespace expense_tracker.Model;
 
 public  class Category
 {

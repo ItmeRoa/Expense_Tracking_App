@@ -8,7 +8,7 @@ public class RazorPageRenderer
 
     public RazorPageRenderer()
     {
-        string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "templates");
+        string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Email");
         _engine = new RazorLightEngineBuilder()
             .UseFileSystemProject(templatePath)
             .UseMemoryCachingProvider()

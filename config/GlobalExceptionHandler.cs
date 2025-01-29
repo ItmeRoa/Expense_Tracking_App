@@ -1,6 +1,5 @@
 using expense_tracker.Exception;
 using Microsoft.AspNetCore.Diagnostics;
-using Personal_finance_tracker.exception;
 using ILogger = Serilog.ILogger;
 
 namespace Personal_finance_tracker.config;

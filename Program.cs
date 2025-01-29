@@ -1,6 +1,5 @@
 using dotenv.net;
 using expense_tracker.config;
-using Personal_finance_tracker.config;
 using Serilog;
 
 DotEnv.Load();

@@ -1,7 +1,6 @@
-﻿
-namespace expense_tracker.Model;
+﻿namespace expense_tracker.Model;
 
-public  class Transaction
+public class Transaction
 {
     public int TransactionId { get; set; }
 

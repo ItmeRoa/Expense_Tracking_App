@@ -1,13 +1,12 @@
-﻿
-namespace expense_tracker.Model;
+﻿namespace expense_tracker.Model;
 
-public  class User
+public class User
 {
     public int UserId { get; set; }
 
     public string FirstName { get; set; } = null!;
 
-    public string? MiddleName { get; set; }
+    public string MiddleName { get; set; } = null!;
 
     public string LastName { get; set; } = null!;
 
@@ -16,6 +15,10 @@ public  class User
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public bool IsEmailVerified { get; set; }
+
+    public string DisplayName { get; set; } = null!;
 
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
 

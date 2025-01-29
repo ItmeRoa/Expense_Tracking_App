@@ -1,3 +1,3 @@
-namespace Personal_finance_tracker.exception;
+namespace expense_tracker.Exception;
 
-public class RepoException(string message, Exception innerException) : Exception(message, innerException);
+public class RepoException(string message, System.Exception innerException) : System.Exception(message, innerException);

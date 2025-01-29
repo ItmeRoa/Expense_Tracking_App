@@ -29,7 +29,7 @@ public static class AppServiceConfig
                 opt.ConfigurationOptions = new StackExchange.Redis.ConfigurationOptions()
                 {
                     AbortOnConnectFail = true,
-                    DefaultDatabase = 0,
+                    DefaultDatabase = 5,
                     EndPoints = { opt.Configuration }
                 };
         });
@@ -54,7 +54,7 @@ public static class AppServiceConfig
 
     public static IServiceCollection AddSwaggerConfig(this IServiceCollection services)
     {
-        services.AddEndpointsApiExplorer(); 
+        services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc("v1", new OpenApiInfo
@@ -96,9 +96,6 @@ public static class AppServiceConfig
     }
 
 
-
-
-
     public static IServiceCollection AddAuthenticationConfig(this IServiceCollection service, IConfiguration config)
     {
         service.AddAuthentication(opt =>
@@ -112,7 +109,7 @@ public static class AppServiceConfig
                 {
                     ValidAlgorithms = [SecurityAlgorithms.HmacSha256Signature],
                     IssuerSigningKey =
-                        new SymmetricSecurityKey(Encoding.ASCII.GetBytes(config["S_KEY"] ?? string.Empty)),
+                        new SymmetricSecurityKey(Encoding.ASCII.GetBytes(config["JWT_KEY"] ?? string.Empty)),
                     ValidateIssuerSigningKey = true,
                     ValidateAudience = true,
                     ValidateIssuer = true,

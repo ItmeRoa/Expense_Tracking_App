@@ -4,22 +4,15 @@ namespace expense_tracker.Util;
 
 public class OtpGenerator
 {
-
-    public  string GenerateSecureOtp()
+    public uint GenerateSecureOtp() // Generate a number in the range 100000–999999
     {
-
-        byte[] randomNumber = new byte[4];
-        
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
         {
+            byte[] randomNumber = new byte[4];
             rng.GetBytes(randomNumber);
+
+            uint otp = 100000 + (BitConverter.ToUInt32(randomNumber, 0) % 900000);
+            return otp;
         }
-
-        int value = BitConverter.ToInt32(randomNumber, 0);
-
-        int otp = Math.Abs(value % 900000) + 100000;
-
-        return otp.ToString();
     }
-
 }

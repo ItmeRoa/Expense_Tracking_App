@@ -18,7 +18,7 @@ public class JwtGenerator
     {
         _logger = logger;
         _publicKeyPath = config["PUBLIC_KEY"] ?? string.Empty;
-        _symmetricKey = config["S_KEY"] ?? string.Empty;
+        _symmetricKey = config["JWT_KEY"] ?? string.Empty;
         _roleClaims = new Dictionary<string, IEnumerable<Claim>>
         {
             {
