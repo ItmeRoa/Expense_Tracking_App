@@ -22,12 +22,15 @@ public class UserService : IUserService
     private readonly OtpGenerator _otpGenerator;
     private readonly RazorPageRenderer _razorPageRenderer;
     private readonly IFluentEmail _fluentEmail;
+    private readonly JwtGenerator _jwtGenerator;
     private const string RedisKeyOtp = "_session.opt.";
-    private const string RedisEmailCreationPayload = "_session.email.";
-    private const string RedisVerifiedEmailCreationPayload = "_session.email.verified.";
+    private const string RedisEmailCreationPayloadKey = "_session.email.";
+    private const string RedisVerifiedEmailCreationPayloadKey = "_session.email.verified.";
+    private const string RedisRefreshTokenKey = "_user.";
 
     public UserService(IUserRepo userRepo, ILogger logger, RedisCaching cache, PasswordHasher passwordHasher,
-        OtpGenerator otpGenerator, RazorPageRenderer razorPageRenderer, IFluentEmail fluentEmail)
+        OtpGenerator otpGenerator, RazorPageRenderer razorPageRenderer, IFluentEmail fluentEmail,
+        JwtGenerator jwtGenerator)
     {
         _userRepo = userRepo;
         _logger = logger;
@@ -36,6 +39,7 @@ public class UserService : IUserService
         _otpGenerator = otpGenerator;
         _razorPageRenderer = razorPageRenderer;
         _fluentEmail = fluentEmail;
+        _jwtGenerator = jwtGenerator;
     }
 
     private async Task SendEmailAsync(EmailMetadata emailMetadata, EmailVerificationMsg model)
@@ -60,9 +64,43 @@ public class UserService : IUserService
         }
     }
 
-    public Task<User> GetUserByIdAsync(int id)
+    public async Task<UserCheckedByIdResponse> GetUserByIdAsync(int id)
     {
-        return _userRepo.GetUserByIdAsync(id);
+        User user = await _userRepo.GetUserByIdAsync(id);
+        Subscription subscription = user.Subscriptions.First(s => s.SubscriptionStatus == "active");
+        DateTime? endDate = subscription.EndDate;
+        string remain = "Permanent";
+
+        if (endDate.HasValue)
+        {
+            double remainingDays = (endDate.Value.ToUniversalTime() - DateTime.UtcNow).TotalDays;
+            if (remainingDays < 0)
+            {
+                remain = "Expired";
+            }
+            else
+            {
+                remain = $"{remainingDays:F} days";
+            }
+        }
+
+
+        return new UserCheckedByIdResponse
+        {
+            Message = $"Retrieve user by id {user.UserId}",
+            UserInfo = new UserCheckedByIdModel
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                CreateAt = user.CreatedAt,
+                FirstName = user.FirstName,
+                MiddleName = user.MiddleName,
+                LastName = user.LastName,
+                IsEmailVerified = user.IsEmailVerified,
+                UserSubscriptionPlan = subscription.Plan.PlanName,
+                RemainingSubscription = remain
+            }
+        };
     }
 
     public async Task<SignupUapResponse> SignupByUaPAsync(SignUpByUapRequest request)
@@ -78,7 +116,7 @@ public class UserService : IUserService
 
 
             await _cache.SetAsync($"{RedisKeyOtp}{session}", otp, TimeSpan.FromMinutes(10));
-            await _cache.SetAsync($"{RedisEmailCreationPayload}{session}", new RedisEmailUapPayload
+            await _cache.SetAsync($"{RedisEmailCreationPayloadKey}{session}", new RedisEmailUapPayload
             {
                 Email = request.Email,
                 Password = request.Password,
@@ -104,7 +142,7 @@ public class UserService : IUserService
             {
                 Message = "Signup success",
                 Session = session,
-                SignUpSessionExpAt = DateTime.UtcNow.AddMinutes(15)
+                SignUpSessionExpAt = DateTime.UtcNow.AddMinutes(15).ToString("O")
             };
         }
         catch (EntityAlreadyExistException)
@@ -122,23 +160,143 @@ public class UserService : IUserService
         if (otp != request.OtpCode) throw new ArgumentException("The Otp does not match");
 
         RedisEmailUapPayload payload =
-            await _cache.GetAsync<RedisEmailUapPayload>($"{RedisEmailCreationPayload}{session}") ??
+            await _cache.GetAsync<RedisEmailUapPayload>($"{RedisEmailCreationPayloadKey}{session}") ??
             throw new CachedTokenException(
                 "The user creation payload has expired or does not exist");
 
         payload.IsEmailVerified = true;
-        await _cache.SetAsync($"{RedisVerifiedEmailCreationPayload}{session}", payload, TimeSpan.FromMinutes(10));
+        Guid newSession = Guid.NewGuid();
+        await _cache.SetAsync($"{RedisVerifiedEmailCreationPayloadKey}{newSession}", payload, TimeSpan.FromMinutes(10));
 
+        await _cache.RemoveAsync($"{RedisKeyOtp}{session}");
+        await _cache.RemoveAsync($"{RedisEmailCreationPayloadKey}{session}");
         return new SignUpEmailVerificationResponse
         {
             Message = "Email successfully verified.",
-            Session = session,
-            ExpiredAt = DateTime.UtcNow.AddMinutes(10)
+            Session = newSession,
+            ExpiredAt = DateTime.UtcNow.AddMinutes(10).ToString("O")
         };
     }
 
-    public Task<UserCreatedResponse> CreateUserAsync(Guid session, NameReuqest request)
+    public async Task<UserCreatedResponse> CreateUserAsync(Guid session, NameReuqest request)
     {
-        throw new NotImplementedException();
+        RedisEmailUapPayload payload =
+            await _cache.GetAsync<RedisEmailUapPayload>($"{RedisVerifiedEmailCreationPayloadKey}{session}") ??
+            throw new CachedTokenException("The user creation payload has expired or does not exist");
+
+        if (!payload.IsEmailVerified) throw new UnauthorizedAccessException("Email not verified");
+
+        string middleName = request.MiddleName ?? "";
+        string displayName = $"{request.FirstName} {middleName} {request.LastName}";
+
+
+        User user = new User
+        {
+            FirstName = request.FirstName,
+            MiddleName = middleName,
+            LastName = request.LastName,
+            Email = payload.Email,
+            IsEmailVerified = payload.IsEmailVerified,
+            DisplayName = displayName,
+        };
+
+        await _userRepo.CreateUserAsync(user, new UserAuth
+        {
+            PasswordHashed = _passwordHasher.HashPassword(payload.Password)
+        });
+
+        User createdUser = await _userRepo.GetUserByEmailAsync(user.Email);
+        Subscription userSubscription = createdUser.Subscriptions.First(s => s.SubscriptionStatus == "active");
+        string userSubscriptionPlan = userSubscription.Plan.PlanName;
+
+        string accessToken =
+            _jwtGenerator.GenerateAccessToken(createdUser.UserId.ToString(), createdUser.Email, userSubscriptionPlan);
+        string refreshToken = _jwtGenerator.GenerateRefreshToken();
+
+        await _cache.SetAsync($"{RedisRefreshTokenKey}{createdUser.UserId}", refreshToken, TimeSpan.FromDays(7));
+
+        return new UserCreatedResponse
+        {
+            Token = accessToken,
+            Message = "The user Successfully created",
+            MetaData = new UserMetaData
+            {
+                UserId = createdUser.UserId,
+                Email = createdUser.Email,
+                UserSubscriptionPlan = userSubscriptionPlan,
+                FirstName = createdUser.FirstName,
+                MiddleName = createdUser.MiddleName,
+                LastName = createdUser.LastName
+            }
+        };
+    }
+
+    public async Task<LoginResponse> SignInViaUap(UserLoginRequest request)
+    {
+        try
+        {
+            if (!await _userRepo.UserDoesExistByEmailAsync(request.Email))
+                throw new EntityNotFoundException(typeof(User),
+                    $"The user with the email {request.Email} does not exist.");
+
+            User user = await _userRepo.GetUserByEmailAsync(request.Email);
+            UserAuth userAuth = user.UserAuths.First(u => u.UserId == user.UserId);
+
+            if (userAuth.PasswordHashed == null)
+                throw new UserAccountDoesNotExistException($"{request.Email}",
+                    "The user account does not exist by Email and password context, maybe you connect you had connected with Gmail.");
+
+            if (!_passwordHasher.VerifyPassword(request.Password, userAuth.PasswordHashed))
+                throw new UnauthorizedAccessException("The user credential is invalid");
+            Subscription subscription = user.Subscriptions.First(s => s.SubscriptionStatus == "active");
+            string userSubscriptionPlan = subscription.Plan.PlanName;
+            RemainingTime? remain = null;
+            if (subscription.EndDate != null)
+            {
+                TimeSpan remainTimes = subscription.EndDate.Value - DateTime.UtcNow;
+
+                remain = new RemainingTime
+                {
+                    Days = remainTimes.Days,
+                    Hours = remainTimes.Hours,
+                    Minutes = remainTimes.Minutes
+                };
+            }
+
+            string accessToken =
+                _jwtGenerator.GenerateAccessToken(user.UserId.ToString(), user.Email, userSubscriptionPlan);
+            string refreshToken = _jwtGenerator.GenerateRefreshToken();
+
+            await _cache.SetAsync($"{RedisRefreshTokenKey}{user.UserId}", refreshToken, TimeSpan.FromDays(7));
+
+            return new LoginResponse
+            {
+                Message = "User signin successfully",
+                Token = accessToken,
+                UserInfo = new UserInfoLoginData
+                {
+                    UserId = user.UserId,
+                    IsEmailVerified = user.IsEmailVerified,
+                    Email = user.Email,
+                    DisplayName = user.DisplayName,
+                    SubscriptionDetails = new SubscriptionResponse
+                    {
+                        ExpiredAt = subscription.EndDate.GetValueOrDefault().ToString("O"),
+                        UserSubscriptionPlan = userSubscriptionPlan,
+                        RemainingTime = remain
+                    }
+                }
+            };
+        }
+        catch (EntityNotFoundException)
+        {
+            _logger.Error("The user is not found");
+            throw;
+        }
+        catch (UserAccountDoesNotExistException)
+        {
+            _logger.Error("The user account does not exist");
+            throw;
+        }
     }
 }

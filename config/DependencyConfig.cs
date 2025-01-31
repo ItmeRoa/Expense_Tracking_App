@@ -15,7 +15,7 @@ public static class DependencyConfig
     {
         service.AddScoped<IUserRepo, UserRepo>();
         service.AddScoped<IUserService, UserService>();
-        
+
         service.AddScoped<RedisCaching>();
         service.AddTransient<OtpGenerator>();
         service.AddSingleton<RazorPageRenderer>();
@@ -29,6 +29,8 @@ public static class DependencyConfig
     {
         service.AddTransient<IValidator<SignUpByUapRequest>, SignupUapRequestValidation>();
         service.AddTransient<IValidator<NameReuqest>, NameRequestValidation>();
+        service.AddTransient<IValidator<UserLoginRequest>, UserLoginRequestValidation>();
+
         return service;
     }
 }

@@ -2,22 +2,22 @@ using expense_tracker.Exception;
 using Microsoft.AspNetCore.Diagnostics;
 using ILogger = Serilog.ILogger;
 
-namespace Personal_finance_tracker.config;
+namespace expense_tracker.config;
 
 public class GlobalExceptionHandler(ILogger logger) : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, System.Exception exception,
         CancellationToken cancellationToken)
     {
         var (statusCode, message) = exception switch
-        {   
-            
-            UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Access denied please contact admin."),
+        {
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Access denied please contact admin."),
             EntityNotFoundException => (StatusCodes.Status404NotFound, "Entity Not found."),
             EntityAlreadyExistException => (StatusCodes.Status409Conflict, "Entity already exist."),
             RepoException => (StatusCodes.Status500InternalServerError, "External service not responding."),
-            CacheException => (StatusCodes.Status404NotFound,"The resource can not be found in our cache."),
+            CacheException => (StatusCodes.Status404NotFound, "The resource can not be found in our cache."),
             ServiceException => (StatusCodes.Status400BadRequest, "Logic error, check the request"),
+            UserAccountDoesNotExistException => (StatusCodes.Status404NotFound, "The user does not exist"),
             _ => (StatusCodes.Status500InternalServerError, "An Unexpected error.")
         };
 

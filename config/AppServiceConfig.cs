@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Personal_finance_tracker.config;
 using Serilog;
 
 namespace expense_tracker.config;
@@ -115,7 +114,7 @@ public static class AppServiceConfig
                     ValidateIssuer = true,
                     ValidateLifetime = true,
                     ValidIssuer = "roa.io",
-                    ValidAudience = "personal-finance-app",
+                    ValidAudience = "financial-goals-app",
                     ClockSkew = TimeSpan.FromMinutes(5)
                 };
             });
@@ -126,7 +125,7 @@ public static class AppServiceConfig
         service.AddAuthorization(opt =>
         {
             opt.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-            opt.AddPolicy("CanViewResource",
-                policy => policy.RequireClaim("Permission", "CanViewResource"));
+            opt.AddPolicy("Premium Consumer", policy => policy.RequireRole("Premium Consumer"));
+            opt.AddPolicy("Consumer", policy => policy.RequireRole("Consumer"));
         });
 }

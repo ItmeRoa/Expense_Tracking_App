@@ -23,7 +23,9 @@ public class UserRepo : IUserRepo
     {
         try
         {
-            return await _appDbContext.Users.Include(u => u.UserAuths)
+            return await _appDbContext.Users
+                .Include(u => u.UserAuths)
+                .Include(u => u.Subscriptions).ThenInclude(s => s.Plan)
                 .FirstOrDefaultAsync(u => u.Email == email) ?? throw new EntityNotFoundException(typeof(User), email);
         }
         catch (EntityNotFoundException e)
@@ -47,8 +49,8 @@ public class UserRepo : IUserRepo
     {
         try
         {
-            return await _appDbContext.Users.Include(u => u.UserAuths)
-                .FirstOrDefaultAsync(u => u.UserId == id) ?? throw new EntityNotFoundException(typeof(User), id);
+            return await _appDbContext.Users.Include(u => u.Subscriptions).ThenInclude(s => s.Plan)
+                .FirstAsync(u => u.UserId == id) ?? throw new EntityNotFoundException(typeof(User), id);
         }
         catch (EntityNotFoundException ex)
         {
@@ -62,23 +64,43 @@ public class UserRepo : IUserRepo
         }
     }
 
-    public async Task<User> CreateUserAsync(User user)
+    public Task<SubscriptionPlan> GetSubscriptionPlanByNameAndIntervalAsync(string planName, string interval)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<Subscription> SetBasicPlanToUserAsync(User user)
+    {
+        SubscriptionPlan subscriptionPlan = await _appDbContext.SubscriptionPlans.Where(sp => sp.PlanName == "Basic")
+                                                .AsNoTracking()
+                                                .FirstOrDefaultAsync() ??
+                                            throw new EntityNotFoundException(typeof(SubscriptionPlan),
+                                                "The basic plan does not exist ");
+
+        return new Subscription
+        {
+            PlanId = subscriptionPlan.PlanId,
+            UserId = user.UserId,
+        };
+    }
+
+
+    public async Task<User> CreateUserAsync(User user, UserAuth userAuth)
     {
         await using var transaction = await _appDbContext.Database.BeginTransactionAsync();
 
         try
         {
-            var userAuth = user.UserAuths.FirstOrDefault();
-            if (userAuth == null)
-            {
-                throw new ArgumentException("UserAuth must be provided for user creation.");
-            }
-
             await _appDbContext.Users.AddAsync(user);
             await _appDbContext.SaveChangesAsync(); // So SQLServer can create a userId for us
+            // since the user is already tracked by EF core we don't need to query the user again for the userId
 
-            userAuth.UserId = user.UserId; // the user.UserId is from the database
+            userAuth.UserId = user.UserId;
             await _appDbContext.UserAuths.AddAsync(userAuth);
+            await _appDbContext.SaveChangesAsync();
+
+            Subscription subscription = await SetBasicPlanToUserAsync(user);
+            await _appDbContext.Subscriptions.AddAsync(subscription);
             await _appDbContext.SaveChangesAsync();
 
             await transaction.CommitAsync();

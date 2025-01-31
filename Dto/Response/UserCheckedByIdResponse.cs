@@ -1,12 +1,11 @@
 namespace expense_tracker.Dto.Response;
 
-public class UserCreatedResponse : ResponseMsg
+public class UserCheckedByIdResponse : ResponseMsg
 {
-    public required UserMetaData MetaData { get; set; }
-    public required string Token { get; set; }
+    public required UserCheckedByIdModel UserInfo { get; set; }
 }
 
-public class UserMetaData
+public class UserCheckedByIdModel
 {
     public required int UserId { get; set; }
     public required string Email { get; set; }
@@ -14,5 +13,7 @@ public class UserMetaData
     public string? MiddleName { get; set; }
     public required string LastName { get; set; }
     public required string UserSubscriptionPlan { get; set; }
-    
+    public required bool IsEmailVerified { get; set; }
+    public required DateTime CreateAt { get; set; }
+    public required string RemainingSubscription { get; set; }
 }
